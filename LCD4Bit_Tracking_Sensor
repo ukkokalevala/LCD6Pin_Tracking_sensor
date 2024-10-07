@@ -1,0 +1,35 @@
+#include <LiquidCrystal.h>
+
+// Initialize LCD (with 6 pins: RS, EN, D4, D5, D6, D7)
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+// Sensor pin
+int sensorPin = 8;
+
+void setup() {
+  // Set up LCD
+  lcd.begin(16, 2);
+  lcd.print("Line Tracking");
+
+  // Set sensor pin as input
+  pinMode(sensorPin, INPUT);
+}
+
+void loop() {
+  // Read sensor value
+  int sensorValue = digitalRead(sensorPin);
+
+  // Clear the second row
+  lcd.setCursor(0, 1);
+  lcd.print("                "); // Clears previous content
+
+  // Display sensor status
+  lcd.setCursor(0, 1);  // Move cursor to second row
+  if (sensorValue == HIGH) {
+    lcd.print("On Track");  // Sensor detects black line
+  } else {
+    lcd.print("Off Track");  // Sensor is off the black line
+  }
+
+  delay(200);  // Small delay to make LCD more readable
+}
