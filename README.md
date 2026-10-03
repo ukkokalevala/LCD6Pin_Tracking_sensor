@@ -56,57 +56,25 @@ Height: Mount the sensor 3–5 mm above the paper for the most reliable reading.
 Possible Extensions
 Add motors and an H-bridge to convert this into a full line-following robot.
 
-The HD44780 is the controller chip that acts as the "brain" behind the 1602 LCD. Instead of your Arduino directly managing every pixel, it sends simple commands and text to the HD44780, which handles all the complex work of refreshing the screen and rendering characters.
-
-The Controller's Core Registers
-The HD44780 has two main internal registers that your Arduino communicates with, selected by the RS (Register Select) pin :
-
-Instruction Register (IR): When RS is LOW, you are writing to the IR. You send commands here to control things like clearing the screen, turning the display on/off, or setting the cursor position .
-
-Data Register (DR): When RS is HIGH, you are writing to the DR. This is where you send the actual ASCII codes for the characters you want to display (like 'H', 'i', or '!') .
-
-How Characters Get Their Position (DDRAM)
-The HD44780 includes a block of memory called DDRAM (Display Data RAM). Each character position on the 16x2 screen has a unique address in this memory .
-
-For a standard 1602 LCD, the addresses are mapped like this :
-
-Line 1 (Top Row): Starts at address 0x00 and goes up to 0x0F (for 16 characters).
-
-Line 2 (Bottom Row): Starts at address 0x40 and goes up to 0x4F.
-
-When you use a function like lcd.setCursor(0, 1), the LiquidCrystal library translates that into a command sent to the HD44780, telling it to point to the starting DDRAM address of the second row .
-
-How a Character Becomes Dots (CGROM)
-The HD44780 has a built-in Character Generator ROM (CGROM). This is a lookup table that contains the pixel patterns (bitmaps) for standard characters .
-
-When you send the ASCII code for a character, the HD44780:
-
-Takes that code.
-
-Looks it up in the CGROM to find the corresponding 5x7 pixel pattern.
-
-Writes that pattern to the specific location on the screen defined by the current DDRAM address .
-
-How Your Arduino Talks to the HD44780 (4-Bit Mode)
-Your code uses the LiquidCrystal library with a 4-bit interface. This is a clever way to save pins. Instead of using all 8 data lines (D0-D7) to send one byte, it sends the byte in two chunks (a "nibble" at a time) over just 4 data lines (D4-D7) .
-
-Here's what happens under the hood for every character or command:
-
-The Arduino sets the RS pin to indicate whether it's sending a command or data.
-
-It places the upper 4 bits of the byte on pins D4-D7.
-
-It pulses the Enable (E) pin, and the HD44780 latches those 4 bits .
-
-It then places the lower 4 bits on D4-D7.
-
-It pulses the Enable (E) pin again, and the HD44780 latches the complete byte .
-
-The R/W (Read/Write) pin is usually just connected to ground because we only need to write to the display, not read from it .
-
-Why the Initialization Matters
-The HD44780 is a complex chip that requires a specific "wake-up" sequence when power is first applied. The lcd.begin(16, 2) function in your setup handles this automatically. It sends the exact series of commands needed to configure the chip into 4-bit mode and tell it the display dimensions . If this sequence is incorrect, the screen may show random characters or stay blank 
-
 Use two or three sensors for steering corrections (left/center/right).
 
 Log tracking events to EEPROM or send status over serial for debugging.
+
+I2C vs Non-I2C LCD — Short Version
+Non-I2C (Parallel HD44780)
+Wires to Arduino: 6 signal + 2 power = 8 wires
+
+Pins used: 6
+
+Code: LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+Talks directly to the HD44780 chip
+
+I2C LCD
+Wires to Arduino: 2 signal (SDA, SCL) + 2 power = 4 wires
+
+Pins used: 2
+
+Code: LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+Talks through a PCF8574 backpack chip on the back of the LCD
